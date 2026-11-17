@@ -21,18 +21,11 @@ An autonomous, high-performance chess engine in Python designed for the make.fun
 
 ## Architecture and Search Strategy
 
-### 0x88 Board Representation
-The board uses a linear array of 128 elements where square coordinates are mapped as `(rank << 4) | file`. Square validity is checked in a single CPU cycle via `sq & 0x88 == 0`. Black squares mirror White positions along the rank axis via `sq ^ 0x70`.
-
-### Legal Move Generation
-1. **Pseudo-Legal Generation**: Fast directional offsets generate rays for sliding pieces (bishops, rooks, queens) and single-step jumps for pawns, knights, and kings. Castling rights and path safety are validated against ray attacks.
-2. **Check Validation**: Candidate moves are executed on a state history stack, and moves leaving the friendly king in check are pruned.
-
-### Search and Pruning
-- **Negamax Framework**: Zero-sum symmetric formulation simplifies the recursive search tree.
-- **Alpha-Beta Pruning**: Prunes unpromising branches when candidate scores exceed the beta threshold.
-- **MVV-LVA Move Ordering**: Captures are prioritized by Most Valuable Victim - Least Valuable Attacker (`10000 + 10 * VictimValue - AttackerValue`), maximizing beta cutoffs early in search.
-- **Depth & Evaluation**: Defaults to depth 3, balancing tactical precision and response latency. Evaluation computes raw piece material values (P: 100, N: 320, B: 330, R: 500, Q: 900, K: 20000) augmented with piece-square tables rewarding center control and king safety.
+- **0x88 Representation**: Linear 128-element board array indexed by `(rank << 4) | file`. Rapid out-of-bounds testing via `sq & 0x88 == 0`. Black positions mirror along the rank axis using `sq ^ 0x70`.
+- **Legal Move Generation**: Fast directional offsets generate rays for sliding pieces (bishops, rooks, queens) and steps for pawns, knights, and kings. Pseudo-legal moves are verified on an undo history stack to ensure the king is never left in check. Full support for castling, en passant, and pawn promotions.
+- **Negamax Alpha-Beta Pruning**: Zero-sum symmetric framework searching to depth 3 with alpha-beta window pruning to eliminate unpromising branches.
+- **MVV-LVA Move Ordering**: Captures prioritized by Most Valuable Victim - Least Valuable Attacker (`10000 + 10 * Victim - Attacker`) for rapid beta cutoffs.
+- **Positional Evaluation**: Material balance (P:100, N:320, B:330, R:500, Q:900, K:20000) combined with 0x88 piece-square tables rewarding center control, development, and castled king safety.
 
 ## Run Instructions
 
